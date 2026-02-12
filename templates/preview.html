@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview - Educational Content Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>📚 Educational Content Generator</h1>
+            <p class="subtitle">Content Preview</p>
+        </div>
+    </header>
+
+    <nav class="navbar">
+        <div class="container">
+            <a href="/" class="nav-brand">Content Hub</a>
+            <ul class="nav-menu">
+                <li><a href="/">Home</a></li>
+                <li><a href="/search">Search</a></li>
+                <li><a href="/#topics">Browse Topics</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <section class="preview-section">
+            <div class="container">
+                <a href="/search" class="btn btn-secondary" style="margin-bottom: 20px;">← Back to Search</a>
+
+                <div class="content-preview">
+                    <div class="content-header">
+                        <h2>{{ topic.name }}</h2>
+                        <p class="topic-desc">{{ topic.description }}</p>
+                    </div>
+
+                    <div class="content-item">
+                        <h3>{{ content.title }}</h3>
+
+                        <div class="content-body">
+                            <h4>Explanation:</h4>
+                            <div class="explanation">
+                                {% for line in content.explanation.split('\n') %}
+                                    <p>{{ line }}</p>
+                                {% endfor %}
+                            </div>
+
+                            {% if content.code_examples %}
+                                <h4>Code Examples:</h4>
+                                <pre class="code-examples">{{ content.code_examples }}</pre>
+                            {% endif %}
+                        </div>
+
+                        <div class="content-footer">
+                            <div class="download-options">
+                                <h4>Download Content As:</h4>
+                                <div class="download-buttons">
+                                    <form method="POST" action="/api/download/{{ content.id }}" style="display: inline;">
+                                        <input type="hidden" name="format" value="pdf">
+                                        <button type="submit" class="btn btn-primary">
+                                            📄 Download as PDF
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="/api/download/{{ content.id }}" style="display: inline;">
+                                        <input type="hidden" name="format" value="text">
+                                        <button type="submit" class="btn btn-primary">
+                                            📝 Download as Text
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="/api/download/{{ content.id }}" style="display: inline;">
+                                        <input type="hidden" name="format" value="markdown">
+                                        <button type="submit" class="btn btn-primary">
+                                            📋 Download as Markdown
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Educational Content Generator. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>

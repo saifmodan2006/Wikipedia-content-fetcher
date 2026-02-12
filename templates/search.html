@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Content - Educational Content Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>📚 Educational Content Generator</h1>
+            <p class="subtitle">Search and preview learning materials</p>
+        </div>
+    </header>
+
+    <nav class="navbar">
+        <div class="container">
+            <a href="/" class="nav-brand">Content Hub</a>
+            <ul class="nav-menu">
+                <li><a href="/">Home</a></li>
+                <li><a href="/search">Search</a></li>
+                <li><a href="/#topics">Browse Topics</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <section class="search-section">
+            <div class="container">
+                <h2>Search Topics</h2>
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Enter a topic to search..." class="search-input">
+                    <button id="searchBtn" class="btn btn-primary">Search</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="resultsSection" class="results-section">
+            <div class="container">
+                <h2>Results</h2>
+                <div id="resultsContainer">
+                    <div class="message">Enter a search term to get started</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="previewSection" class="preview-section" style="display:none;">
+            <div class="container">
+                <h2>Content Preview</h2>
+                <div id="previewContainer" class="content-preview">
+                    <!-- Preview content will be loaded here -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Educational Content Generator. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            setupSearch();
+            loadInitialResults();
+        });
+
+        function loadInitialResults() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const topic = urlParams.get('topic');
+
+            if (topic) {
+                document.getElementById('searchInput').value = topic;
+                performSearch(topic);
+            }
+        }
+
+        function setupSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const searchBtn = document.getElementById('searchBtn');
+
+            searchBtn.addEventListener('click', () => {
+                const query = searchInput.value.trim();
+                if (query) performSearch(query);
+            });
+
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const query = searchInput.value.trim();
+                    if (query) performSearch(query);
+                }
+            });
+        }
+
+        function performSearch(query) {
+            const resultsContainer = document.getElementById('resultsContainer');
+            resultsContainer.innerHTML = '<div class="loading">Searching...</div>';
+
+            fetch(`/api/topics/search?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displaySearchResults(data.data, resultsContainer);
+                    } else {
+                        resultsContainer.innerHTML = '<div class="error">Search failed</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    resultsContainer.innerHTML = '<div class="error">Error performing search</div>';
+                });
+        }
+
+        function displaySearchResults(topics, container) {
+            if (topics.length === 0) {
+                container.innerHTML = '<div class="message">No topics found matching your search</div>';
+                document.getElementById('previewSection').style.display = 'none';
+                return;
+            }
+
+            container.innerHTML = topics.map(topic => `
+                <div class="result-card">
+                    <h3>${escapeHtml(topic.name)}</h3>
+                    <p>${escapeHtml(topic.description || 'No description available')}</p>
+                    <button class="btn btn-secondary" onclick="loadTopicContent(${topic.id})">
+                        View Content
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function loadTopicContent(topicId) {
+            const previewSection = document.getElementById('previewSection');
+            const previewContainer = document.getElementById('previewContainer');
+            previewSection.style.display = 'block';
+            previewContainer.innerHTML = '<div class="loading">Loading content...</div>';
+
+            fetch(`/api/topics/${topicId}/content`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayContentPreview(data.topic, data.content, previewContainer);
+                        previewSection.scrollIntoView({ behavior: 'smooth' });
+                    } else {
+                        previewContainer.innerHTML = '<div class="error">Failed to load content</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    previewContainer.innerHTML = '<div class="error">Error loading content</div>';
+                });
+        }
+
+        function displayContentPreview(topic, contentList, container) {
+            if (contentList.length === 0) {
+                container.innerHTML = '<div class="message">No content available for this topic</div>';
+                return;
+            }
+
+            container.innerHTML = contentList.map(content => `
+                <div class="content-item">
+                    <div class="content-header">
+                        <h3>${escapeHtml(content.title)}</h3>
+                    </div>
+                    <div class="content-body">
+                        <h4>Explanation:</h4>
+                        <div class="explanation">${escapeHtml(content.explanation).replace(/\n/g, '<br>')}</div>
+
+                        ${content.code_examples ? `
+                            <h4>Code Examples:</h4>
+                            <pre class="code-examples">${escapeHtml(content.code_examples)}</pre>
+                        ` : ''}
+                    </div>
+                    <div class="content-footer">
+                        <div class="download-options">
+                            <p>Download as:</p>
+                            <button class="btn btn-small" onclick="downloadContent(${content.id}, 'pdf')">📄 PDF</button>
+                            <button class="btn btn-small" onclick="downloadContent(${content.id}, 'text')">📝 Text</button>
+                            <button class="btn btn-small" onclick="downloadContent(${content.id}, 'markdown')">📋 Markdown</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function downloadContent(contentId, format) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/api/download/${contentId}?format=${format}`;
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

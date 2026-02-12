@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Educational Content Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>📚 Educational Content Generator</h1>
+            <p class="subtitle">Generate, preview, and download learning materials</p>
+        </div>
+    </header>
+
+    <nav class="navbar">
+        <div class="container">
+            <a href="/" class="nav-brand">Content Hub</a>
+            <ul class="nav-menu">
+                <li><a href="/">Home</a></li>
+                <li><a href="/wikipedia">📚 Wikipedia Fetcher</a></li>
+                <li><a href="/search">Search</a></li>
+                <li><a href="/#topics">Browse Topics</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <h2>Welcome to the Content Generator</h2>
+                <p>Select a topic below to explore comprehensive learning materials with explanations and code examples.</p>
+                <div class="search-box">
+                    <input type="text" id="quickSearch" placeholder="Quick search topics..." class="search-input">
+                </div>
+            </div>
+        </section>
+
+        <section id="topics" class="topics-section">
+            <div class="container">
+                <h2>Available Topics</h2>
+                <div id="topicsContainer" class="topics-grid">
+                    <div class="loading">Loading topics...</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Educational Content Generator. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTopics();
+            setupQuickSearch();
+        });
+
+        function loadTopics() {
+            const container = document.getElementById('topicsContainer');
+            container.innerHTML = '<div class="loading">Loading topics...</div>';
+
+            fetch('/api/topics')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayTopics(data.data, container);
+                    } else {
+                        container.innerHTML = '<div class="error">Failed to load topics</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    container.innerHTML = '<div class="error">Error loading topics</div>';
+                });
+        }
+
+        function displayTopics(topics, container) {
+            if (topics.length === 0) {
+                container.innerHTML = '<div class="message">No topics found</div>';
+                return;
+            }
+
+            container.innerHTML = topics.map(topic => `
+                <div class="topic-card">
+                    <h3>${escapeHtml(topic.name)}</h3>
+                    <p>${escapeHtml(topic.description || 'No description available')}</p>
+                    <a href="/search?topic=${encodeURIComponent(topic.name)}" class="btn btn-primary">
+                        View Content
+                    </a>
+                </div>
+            `).join('');
+        }
+
+        function setupQuickSearch() {
+            const searchInput = document.getElementById('quickSearch');
+            let debounceTimer;
+
+            searchInput.addEventListener('input', function(e) {
+                clearTimeout(debounceTimer);
+                const query = e.target.value.trim();
+
+                if (query.length < 2) {
+                    loadTopics();
+                    return;
+                }
+
+                debounceTimer = setTimeout(() => {
+                    fetch(`/api/topics/search?q=${encodeURIComponent(query)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const container = document.getElementById('topicsContainer');
+                            if (data.success) {
+                                displayTopics(data.data, container);
+                            }
+                        });
+                }, 300);
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

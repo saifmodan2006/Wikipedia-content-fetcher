@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wikipedia Content Fetcher | Wiki Manager</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .wiki-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .wiki-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .wiki-header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.5em;
+        }
+
+        .wiki-header p {
+            margin: 0;
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .api-section {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .api-section h2 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .api-key-display {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .copy-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .copy-btn:hover {
+            background: #764ba2;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .search-box button {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        .search-box button:hover {
+            background: #764ba2;
+        }
+
+        .results-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .result-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .result-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .result-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .result-header h3 {
+            margin: 0;
+            font-size: 1.2em;
+            word-break: break-word;
+        }
+
+        .result-body {
+            padding: 15px;
+        }
+
+        .result-summary {
+            color: #666;
+            font-size: 0.95em;
+            line-height: 1.5;
+            margin-bottom: 15px;
+            max-height: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .result-meta {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            font-size: 0.85em;
+        }
+
+        .badge {
+            background: #e9ecef;
+            padding: 4px 8px;
+            border-radius: 3px;
+            color: #495057;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.3s;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #764ba2;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .detail-section {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .detail-title {
+            font-size: 2em;
+            color: #333;
+            margin: 0;
+        }
+
+        .detail-url {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.95em;
+        }
+
+        .detail-url:hover {
+            text-decoration: underline;
+        }
+
+        .detail-content {
+            line-height: 1.8;
+            color: #555;
+            text-align: justify;
+        }
+
+        .categories {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .categories h4 {
+            margin-top: 0;
+        }
+
+        .category-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .category-tag {
+            background: #667eea;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .references {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .references h4 {
+            margin-top: 0;
+        }
+
+        .reference-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .reference-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .reference-list li:last-child {
+            border-bottom: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+
+        .success-message {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+
+        .download-options {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #dee2e6;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background: #6c757d;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .back-btn:hover {
+            background: #5a6268;
+        }
+
+        @media (max-width: 768px) {
+            .wiki-header h1 {
+                font-size: 1.8em;
+            }
+
+            .results-container {
+                grid-template-columns: 1fr;
+            }
+
+            .detail-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="wiki-container">
+        <div class="wiki-header">
+            <h1>📚 Wikipedia Content Fetcher</h1>
+            <p>Search and fetch any Wikipedia topic with our custom API</p>
+        </div>
+
+        <div class="api-section">
+            <h2>🔑 API Configuration</h2>
+            <p>Your API Key (use this to authenticate your requests):</p>
+            <div class="api-key-display">
+                <span id="apiKey">Loading API key...</span>
+                <button class="copy-btn" onclick="copyAPIKey()">Copy</button>
+            </div>
+            <p><small>API Endpoint: <code>/api/wikipedia/fetch</code> | Method: <code>POST</code></small></p>
+        </div>
+
+        <div class="api-section">
+            <h2>🔍 Search Wikipedia</h2>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Enter any topic (e.g., Machine Learning, Python, History...)" />
+                <button onclick="searchWikipedia()">Search</button>
+            </div>
+        </div>
+
+        <div id="results">
+            <!-- Results will be displayed here -->
+        </div>
+
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        let currentAPIKey = null;
+
+        // Load API key on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            loadAPIKey();
+            setupSearchListener();
+        });
+
+        function loadAPIKey() {
+            // Generate a new API key for this session
+            fetch('/api/keys/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: 'Web Session - ' + new Date().toLocaleString()
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentAPIKey = data.data.key;
+                    document.getElementById('apiKey').textContent = data.data.key;
+                }
+            })
+            .catch(error => console.error('Error loading API key:', error));
+        }
+
+        function copyAPIKey() {
+            if (!currentAPIKey) {
+                alert('API key not loaded yet');
+                return;
+            }
+            navigator.clipboard.writeText(currentAPIKey).then(() => {
+                alert('API key copied to clipboard!');
+            });
+        }
+
+        function setupSearchListener() {
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchWikipedia();
+                }
+            });
+        }
+
+        function searchWikipedia() {
+            const topic = document.getElementById('searchInput').value.trim();
+            
+            if (!topic) {
+                alert('Please enter a topic to search');
+                return;
+            }
+
+            if (!currentAPIKey) {
+                alert('API key not loaded yet');
+                return;
+            }
+
+            showLoading();
+
+            fetch('/api/wikipedia/fetch', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-API-Key': currentAPIKey
+                },
+                body: JSON.stringify({
+                    topic: topic
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayResults(data);
+                } else {
+                    showError(data.message || 'Failed to fetch content');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showError('Error fetching content: ' + error.message);
+            });
+        }
+
+        function showLoading() {
+            document.getElementById('results').innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Fetching content from Wikipedia...</p>
+                </div>
+            `;
+        }
+
+        function showError(message) {
+            document.getElementById('results').innerHTML = `
+                <div class="error-message">
+                    <strong>Error:</strong> ${message}
+                </div>
+            `;
+        }
+
+        function displayResults(data) {
+            let html = `
+                <div class="detail-section">
+                    <div class="detail-header">
+                        <h2 class="detail-title">${data.title}</h2>
+                        <a href="${data.url}" target="_blank" class="detail-url">Read on Wikipedia →</a>
+                    </div>
+                    
+                    <div class="detail-content">
+                        <h3>Summary</h3>
+                        <p>${data.summary}</p>
+                        
+                        <h3>Content</h3>
+                        <p>${data.content.replace(/\n\n/g, '</p><p>')}</p>
+                    </div>
+            `;
+
+            if (data.categories && data.categories.length > 0) {
+                html += `
+                    <div class="categories">
+                        <h4>📂 Categories</h4>
+                        <div class="category-tags">
+                            ${data.categories.slice(0, 10).map(cat => `<span class="category-tag">${cat}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (data.references && data.references.length > 0) {
+                html += `
+                    <div class="references">
+                        <h4>🔗 Related Links</h4>
+                        <ul class="reference-list">
+                            ${data.references.slice(0, 10).map(ref => `<li>• ${ref}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            html += `
+                    <div class="download-options">
+                        <button class="btn btn-success" onclick="downloadContent('${data.title}', 'pdf')">📄 Download as PDF</button>
+                        <button class="btn btn-success" onclick="downloadContent('${data.title}', 'markdown')">📝 Download as Markdown</button>
+                        <button class="btn btn-success" onclick="downloadContent('${data.title}', 'text')">📋 Download as Text</button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('results').innerHTML = html;
+        }
+
+        function downloadContent(title, format) {
+            if (!currentAPIKey) {
+                alert('API key not available');
+                return;
+            }
+
+            // Store content for download
+            const downloadLink = document.createElement('a');
+            downloadLink.href = `/api/wikipedia/download?api_key=${currentAPIKey}&title=${encodeURIComponent(title)}&format=${format}`;
+            downloadLink.download = `${title}.${format === 'markdown' ? 'md' : format}`;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+        }
+    </script>
+</body>
+</html>
