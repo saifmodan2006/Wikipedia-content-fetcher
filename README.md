@@ -468,7 +468,7 @@ If you find this project useful, please consider:
 
 <div align="center">
 
-**Made with ❤️ by Sahil Modan**
+**Made with ❤️ by Saif Modan**
 
 [⬆ Back to Top](#-wikipedia-content-fetcher)
 
