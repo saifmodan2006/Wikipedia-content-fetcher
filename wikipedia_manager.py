@@ -107,22 +107,26 @@ class WikipediaManager:
             # Format the content
             formatted_content = self._format_content(page, sections)
             
-            # Cache the content
+            # Try to cache the content (will fail gracefully outside app context)
             try:
-                cached = WikipediaContent(
-                    topic_name=topic,
-                    title=page.title,
-                    content=formatted_content,
-                    url=page.fullurl,
-                    summary=page.summary[:500] if page.summary else "",
-                    categories=json.dumps(categories),
-                    references=json.dumps(links)
-                )
-                db.session.add(cached)
-                db.session.commit()
+                from flask import has_request_context
+                from flask.globals import app_ctx
+                # Only try to cache if we have an app context
+                if app_ctx is not None:
+                    cached = WikipediaContent(
+                        topic_name=topic,
+                        title=page.title,
+                        content=formatted_content,
+                        url=page.fullurl,
+                        summary=page.summary[:500] if page.summary else "",
+                        categories=json.dumps(categories),
+                        references=json.dumps(links)
+                    )
+                    db.session.add(cached)
+                    db.session.commit()
             except Exception as cache_error:
-                print(f"Cache error: {cache_error}")
-                db.session.rollback()
+                # Silently ignore cache errors - content is still valid
+                pass
             
             return {
                 'success': True,

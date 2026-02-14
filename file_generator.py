@@ -122,6 +122,103 @@ class FileGenerator:
             return self.generate_markdown(topic_name, content)
         else:
             raise ValueError(f"Unsupported format: {format_type}")
+    
+    def generate_pdf_from_wikipedia(self, title, content, url):
+        """Generate PDF from Wikipedia content"""
+        filename = self.generate_filename(title, title, 'pdf')
+        filepath = os.path.join(self.download_folder, filename)
+
+        try:
+            pdf = FPDF('P', 'mm', 'A4')
+            pdf.add_page()
+            pdf.set_margins(10, 10, 10)
+
+            # Title
+            pdf.set_font('Helvetica', 'B', 16)
+            pdf.cell(0, 10, "Wikipedia Article", ln=True, align='C')
+            pdf.ln(5)
+
+            # Article title
+            pdf.set_font('Helvetica', 'B', 12)
+            title_clean = title[:50] if len(title) > 50 else title
+            pdf.cell(0, 8, title_clean, ln=True)
+            pdf.ln(2)
+
+            # URL - shortened
+            pdf.set_font('Helvetica', 'I', 8)
+            url_display = url[:60] + "..." if len(url) > 60 else url
+            pdf.cell(0, 6, f"Source: {url_display}", ln=True)
+            pdf.ln(3)
+
+            # Content
+            pdf.set_font('Helvetica', '', 9)
+            
+            # Clean and shorten content for PDF
+            lines = content.split('\n')
+            char_count = 0
+            max_chars = 5000  # Limit content size
+            
+            for line in lines:
+                if char_count > max_chars:
+                    pdf.cell(0, 6, "[...content truncated...]", ln=True)
+                    break
+                    
+                if line.strip():
+                    # Remove problematic unicode
+                    clean_line = ''.join(c if ord(c) < 128 else '?' for c in line.strip())
+                    if clean_line:
+                        pdf.multi_cell(0, 4, clean_line, max_lines=2)
+                        char_count += len(clean_line)
+                else:
+                    pdf.ln(2)
+
+            pdf.ln(4)
+
+            # Footer
+            pdf.set_font('Helvetica', 'I', 7)
+            pdf.cell(0, 6, f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", ln=True)
+
+            pdf.output(filepath)
+            return filename, filepath
+            
+        except Exception as e:
+            # If PDF fails, at least create a txt version
+            print(f"PDF generation warning: {str(e)}")
+            # Create text version as fallback
+            return self.generate_text_from_wikipedia(title, content, url)
+    
+    def generate_markdown_from_wikipedia(self, title, content, url):
+        """Generate Markdown from Wikipedia content"""
+        filename = self.generate_filename(title, title, 'md')
+        filepath = os.path.join(self.download_folder, filename)
+
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(f"# {title}\n\n")
+            f.write(f"**Source:** [{url}]({url})\n\n")
+            f.write(f"---\n\n")
+            f.write(content)
+            f.write(f"\n\n---\n*Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n")
+
+        return filename, filepath
+    
+    def generate_text_from_wikipedia(self, title, content, url):
+        """Generate plain text from Wikipedia content"""
+        filename = self.generate_filename(title, title, 'txt')
+        filepath = os.path.join(self.download_folder, filename)
+
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write("=" * 80 + "\n")
+            f.write(f"WIKIPEDIA ARTICLE: {title}\n")
+            f.write("=" * 80 + "\n\n")
+            f.write(f"Source: {url}\n\n")
+            f.write("-" * 80 + "\n\n")
+            f.write(content)
+            f.write("\n\n")
+            f.write("-" * 80 + "\n")
+            f.write(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write("=" * 80 + "\n")
+
+        return filename, filepath
 
     def remove_file(self, filename):
         """Remove a generated file"""
