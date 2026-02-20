@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wikipedia Content Fetcher | Wiki Manager</title>
+    <title>📚 Wikipedia Fetcher - Intelligent Content Fetcher</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
         .wiki-container {
@@ -15,89 +15,127 @@
         .wiki-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 40px 20px;
-            border-radius: 10px;
-            margin-bottom: 30px;
+            padding: 50px 20px;
+            border-radius: 12px;
+            margin-bottom: 40px;
             text-align: center;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+            animation: slideInDown 0.8s ease-out;
         }
 
         .wiki-header h1 {
             margin: 0 0 10px 0;
-            font-size: 2.5em;
+            font-size: 2.3em;
+            font-weight: 700;
         }
 
         .wiki-header p {
             margin: 0;
             font-size: 1.1em;
-            opacity: 0.9;
+            opacity: 0.95;
+            font-weight: 300;
         }
 
         .api-section {
-            background: #f8f9fa;
-            border: 2px solid #dee2e6;
-            border-radius: 8px;
-            padding: 20px;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 30px;
             margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            animation: fadeInUp 0.8s ease-out 0.2s backwards;
+            transition: all 0.3s ease;
+        }
+
+        .api-section:hover {
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+            border-color: #667eea;
         }
 
         .api-section h2 {
             margin-top: 0;
             color: #333;
+            font-size: 1.5em;
+            font-weight: 700;
         }
 
         .api-key-display {
-            background: white;
-            border: 1px solid #dee2e6;
-            border-radius: 5px;
-            padding: 15px;
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 16px;
             font-family: 'Courier New', monospace;
             word-break: break-all;
-            margin: 10px 0;
+            margin: 15px 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .api-key-display:hover {
+            background: white;
+            border-color: #667eea;
         }
 
         .copy-btn {
-            background: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
+            padding: 10px 20px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            white-space: nowrap;
         }
 
         .copy-btn:hover {
-            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
 
         .search-box {
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
+            animation: fadeInUp 0.8s ease-out 0.3s backwards;
         }
 
         .search-box input {
             flex: 1;
-            padding: 12px;
+            padding: 14px 18px;
             border: 2px solid #dee2e6;
-            border-radius: 5px;
+            border-radius: 8px;
             font-size: 1em;
+            transition: all 0.3s ease;
+            background-color: white;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+            transform: translateY(-2px);
         }
 
         .search-box button {
-            padding: 12px 30px;
-            background: #667eea;
+            padding: 14px 35px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
 
         .search-box button:hover {
-            background: #764ba2;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.5);
         }
 
         .results-container {
@@ -109,43 +147,60 @@
 
         .result-card {
             background: white;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
             overflow: hidden;
-            transition: transform 0.3s, box-shadow 0.3s;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            animation: scaleIn 0.5s ease-out backwards;
         }
 
         .result-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            transform: translateY(-8px);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.2);
+            border-color: #667eea;
         }
 
         .result-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 15px;
-            min-height: 80px;
+            padding: 20px;
+            min-height: 90px;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .result-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 200%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shimmer 3s infinite;
         }
 
         .result-header h3 {
             margin: 0;
             font-size: 1.2em;
             word-break: break-word;
+            position: relative;
+            z-index: 1;
         }
 
         .result-body {
-            padding: 15px;
+            padding: 20px;
         }
 
         .result-summary {
             color: #666;
             font-size: 0.95em;
-            line-height: 1.5;
+            line-height: 1.6;
             margin-bottom: 15px;
-            max-height: 100px;
+            max-height: 120px;
             overflow: hidden;
             text-overflow: ellipsis;
         }
@@ -159,10 +214,12 @@
         }
 
         .badge {
-            background: #e9ecef;
-            padding: 4px 8px;
-            border-radius: 3px;
-            color: #495057;
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            padding: 6px 12px;
+            border-radius: 20px;
+            color: #667eea;
+            font-weight: 600;
+            border: 1px solid #667eea40;
         }
 
         .result-actions {
@@ -173,32 +230,39 @@
 
         .btn {
             flex: 1;
-            padding: 10px;
+            padding: 12px;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 0.9em;
-            transition: background 0.3s;
+            transition: all 0.3s ease;
             text-decoration: none;
             text-align: center;
+            font-weight: 600;
+            min-width: 100px;
         }
 
         .btn-primary {
             background: #667eea;
             color: white;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
         }
 
         .btn-primary:hover {
             background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
         }
 
         .btn-success {
-            background: #28a745;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
             color: white;
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
         }
 
         .btn-success:hover {
-            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.5);
         }
 
         .btn-secondary {
@@ -208,88 +272,112 @@
 
         .btn-secondary:hover {
             background: #5a6268;
-        }
-
-        .btn-danger {
-            background: #dc3545;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #c82333;
+            transform: translateY(-2px);
         }
 
         .detail-section {
             background: white;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 30px;
             margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            animation: fadeInUp 0.6s ease-out;
         }
 
         .detail-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
         }
 
         .detail-title {
-            font-size: 2em;
+            font-size: 2.2em;
             color: #333;
             margin: 0;
+            font-weight: 700;
         }
 
         .detail-url {
             color: #667eea;
             text-decoration: none;
             font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            padding: 8px 16px;
+            border: 2px solid #667eea;
+            border-radius: 6px;
+            display: inline-block;
         }
 
         .detail-url:hover {
-            text-decoration: underline;
+            background-color: #667eea;
+            color: white;
+            transform: translateY(-2px);
         }
 
         .detail-content {
             line-height: 1.8;
             color: #555;
-            text-align: justify;
+        }
+
+        .detail-content h3 {
+            color: #333;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-weight: 700;
+            border-left: 4px solid #667eea;
+            padding-left: 15px;
         }
 
         .categories {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #dee2e6;
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #e9ecef;
         }
 
         .categories h4 {
             margin-top: 0;
+            color: #333;
+            font-weight: 700;
         }
 
         .category-tags {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             flex-wrap: wrap;
         }
 
         .category-tag {
-            background: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 6px 12px;
+            padding: 8px 16px;
             border-radius: 20px;
             font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .category-tag:hover {
+            transform: scale(1.08);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
 
         .references {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #dee2e6;
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #e9ecef;
         }
 
         .references h4 {
             margin-top: 0;
+            color: #333;
+            font-weight: 700;
         }
 
         .reference-list {
@@ -298,8 +386,24 @@
         }
 
         .reference-list li {
-            padding: 8px 0;
+            padding: 12px 0;
+            padding-left: 20px;
             border-bottom: 1px solid #e9ecef;
+            color: #666;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .reference-list li::before {
+            content: '🔗';
+            position: absolute;
+            left: 0;
+            top: 10px;
+        }
+
+        .reference-list li:hover {
+            color: #667eea;
+            padding-left: 30px;
         }
 
         .reference-list li:last-child {
@@ -308,15 +412,16 @@
 
         .loading {
             text-align: center;
-            padding: 40px;
+            padding: 60px 20px;
+            animation: fadeInUp 0.5s ease-out;
         }
 
         .spinner {
             border: 4px solid #f3f3f3;
             border-top: 4px solid #667eea;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
             animation: spin 1s linear infinite;
             margin: 0 auto 20px;
         }
@@ -328,26 +433,30 @@
 
         .error-message {
             background: #f8d7da;
-            border: 1px solid #f5c6cb;
+            border: 2px solid #f5c6cb;
             color: #721c24;
-            padding: 15px;
-            border-radius: 5px;
+            padding: 20px;
+            border-radius: 8px;
             margin: 20px 0;
+            animation: slideInDown 0.5s ease-out;
+            font-weight: 500;
         }
 
         .success-message {
             background: #d4edda;
-            border: 1px solid #c3e6cb;
+            border: 2px solid #c3e6cb;
             color: #155724;
-            padding: 15px;
-            border-radius: 5px;
+            padding: 20px;
+            border-radius: 8px;
             margin: 20px 0;
+            animation: fadeInUp 0.5s ease-out;
+            font-weight: 500;
         }
 
         .download-options {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #dee2e6;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #e9ecef;
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
@@ -356,16 +465,18 @@
         .back-btn {
             display: inline-block;
             margin-bottom: 20px;
-            padding: 10px 20px;
+            padding: 12px 24px;
             background: #6c757d;
             color: white;
             text-decoration: none;
-            border-radius: 5px;
-            transition: background 0.3s;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-weight: 600;
         }
 
         .back-btn:hover {
             background: #5a6268;
+            transform: translateY(-2px);
         }
 
         @media (max-width: 768px) {
@@ -381,14 +492,22 @@
                 flex-direction: column;
                 align-items: flex-start;
             }
+
+            .search-box {
+                flex-direction: column;
+            }
+
+            .search-box button {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
     <div class="wiki-container">
         <div class="wiki-header">
-            <h1>📚 Wikipedia Content Fetcher</h1>
-            <p>Search and fetch any Wikipedia topic with our custom API</p>
+            <h1>📚 Wikipedia Fetcher</h1>
+            <p>Search and fetch any Wikipedia topic with instant results</p>
         </div>
 
         <div class="api-section">
@@ -396,7 +515,7 @@
             <p>Your API Key (use this to authenticate your requests):</p>
             <div class="api-key-display">
                 <span id="apiKey">Loading API key...</span>
-                <button class="copy-btn" onclick="copyAPIKey()">Copy</button>
+                <button class="copy-btn" onclick="copyAPIKey()">📋 Copy</button>
             </div>
             <p><small>API Endpoint: <code>/api/wikipedia/fetch</code> | Method: <code>POST</code></small></p>
         </div>
@@ -404,8 +523,8 @@
         <div class="api-section">
             <h2>🔍 Search Wikipedia</h2>
             <div class="search-box">
-                <input type="text" id="searchInput" placeholder="Enter any topic (e.g., Machine Learning, Python, History...)" />
-                <button onclick="searchWikipedia()">Search</button>
+                <input type="text" id="searchInput" placeholder="Search any topic (e.g., Machine Learning, Physics, History...)" />
+                <button onclick="searchWikipedia()">Search 🚀</button>
             </div>
         </div>
 
@@ -452,7 +571,7 @@
                 return;
             }
             navigator.clipboard.writeText(currentAPIKey).then(() => {
-                alert('API key copied to clipboard!');
+                alert('✓ API key copied to clipboard!');
             });
         }
 
@@ -466,7 +585,7 @@
 
         function searchWikipedia() {
             const topic = document.getElementById('searchInput').value.trim();
-            
+
             if (!topic) {
                 alert('Please enter a topic to search');
                 return;
@@ -525,13 +644,13 @@
                 <div class="detail-section">
                     <div class="detail-header">
                         <h2 class="detail-title">${data.title}</h2>
-                        <a href="${data.url}" target="_blank" class="detail-url">Read on Wikipedia →</a>
+                        <a href="${data.url}" target="_blank" class="detail-url">📖 Read on Wikipedia</a>
                     </div>
-                    
+
                     <div class="detail-content">
                         <h3>Summary</h3>
                         <p>${data.summary}</p>
-                        
+
                         <h3>Content</h3>
                         <p>${data.content.replace(/\n\n/g, '</p><p>')}</p>
                     </div>
@@ -553,7 +672,7 @@
                     <div class="references">
                         <h4>🔗 Related Links</h4>
                         <ul class="reference-list">
-                            ${data.references.slice(0, 10).map(ref => `<li>• ${ref}</li>`).join('')}
+                            ${data.references.slice(0, 10).map(ref => `<li>${ref}</li>`).join('')}
                         </ul>
                     </div>
                 `;
@@ -561,9 +680,9 @@
 
             html += `
                     <div class="download-options">
-                        <button class="btn btn-success" onclick="downloadContent('${data.title}', 'pdf')">📄 Download as PDF</button>
-                        <button class="btn btn-success" onclick="downloadContent('${data.title}', 'markdown')">📝 Download as Markdown</button>
-                        <button class="btn btn-success" onclick="downloadContent('${data.title}', 'text')">📋 Download as Text</button>
+                        <button class="btn btn-success" onclick="downloadContent('${data.title}', 'pdf')">📄 PDF</button>
+                        <button class="btn btn-success" onclick="downloadContent('${data.title}', 'markdown')">📝 Markdown</button>
+                        <button class="btn btn-success" onclick="downloadContent('${data.title}', 'text')">📋 Text</button>
                     </div>
                 </div>
             `;

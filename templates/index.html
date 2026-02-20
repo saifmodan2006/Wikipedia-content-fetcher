@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Educational Content Generator</title>
+    <title>📚 Wikipedia Fetcher - Educational Content Generator</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <header>
         <div class="container">
-            <h1>📚 Educational Content Generator</h1>
-            <p class="subtitle">Generate, preview, and download learning materials</p>
+            <h1>📚 Wikipedia Fetcher</h1>
+            <p class="subtitle">Intelligent content fetcher & learning material generator</p>
         </div>
     </header>
 
     <nav class="navbar">
         <div class="container">
-            <a href="/" class="nav-brand">Content Hub</a>
+            <a href="/" class="nav-brand">📚 Fetcher</a>
             <ul class="nav-menu">
                 <li><a href="/">Home</a></li>
-                <li><a href="/wikipedia">📚 Wikipedia Fetcher</a></li>
-                <li><a href="/search">Search</a></li>
+                <li><a href="/wikipedia">Fetch from Wikipedia</a></li>
+                <li><a href="/search">Search Content</a></li>
                 <li><a href="/#topics">Browse Topics</a></li>
             </ul>
         </div>
@@ -29,10 +29,10 @@
     <main>
         <section class="hero">
             <div class="container">
-                <h2>Welcome to the Content Generator</h2>
-                <p>Select a topic below to explore comprehensive learning materials with explanations and code examples.</p>
+                <h2>Discover. Learn. Share.</h2>
+                <p>Fetch comprehensive learning materials from Wikipedia and explore curated topics with detailed explanations and code examples.</p>
                 <div class="search-box">
-                    <input type="text" id="quickSearch" placeholder="Quick search topics..." class="search-input">
+                    <input type="text" id="quickSearch" placeholder="🔍 Search topics..." class="search-input">
                 </div>
             </div>
         </section>
@@ -49,8 +49,8 @@
 
     <footer>
         <div class="container">
-            <p>&copy; Copyright 2026 Saif Modan. All rights reserved.</p>
-            <p>Developed 🚀 by Saif Modan</p>
+            <p>📚 Wikipedia Fetcher - Educational Content Hub</p>
+            <p>&copy; 2026 Saif Modan. All rights reserved.</p>
         </div>
     </footer>
 
@@ -86,12 +86,12 @@
                 return;
             }
 
-            container.innerHTML = topics.map(topic => `
-                <div class="topic-card">
+            container.innerHTML = topics.map((topic, index) => `
+                <div class="topic-card" style="animation-delay: ${index * 0.1}s">
                     <h3>${escapeHtml(topic.name)}</h3>
-                    <p>${escapeHtml(topic.description || 'No description available')}</p>
+                    <p>${escapeHtml(topic.description || 'Explore this educational topic in detail')}</p>
                     <a href="/search?topic=${encodeURIComponent(topic.name)}" class="btn btn-primary">
-                        View Content
+                        Explore 📖
                     </a>
                 </div>
             `).join('');
