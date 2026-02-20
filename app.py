@@ -401,6 +401,43 @@ def create_app(config_name='development'):
                 'error': f'Error generating file: {str(e)}'
             }), 500
 
+    @app.route('/api/wikipedia/download', methods=['GET'])
+    def api_wikipedia_download_by_title():
+        """Download Wikipedia content by title"""
+        api_key = request.args.get('api_key') or request.headers.get('X-API-Key')
+        title = request.args.get('title', '').strip()
+        format_type = request.args.get('format', 'pdf').lower()
+        content_text = request.args.get('content', '')
+        url = request.args.get('url', '')
+
+        if not api_key:
+            return jsonify({'success': False, 'error': 'API key required'}), 401
+
+        if not WikipediaManager.validate_api_key(api_key):
+            return jsonify({'success': False, 'error': 'Invalid API key'}), 401
+
+        if not title:
+            return jsonify({'success': False, 'error': 'Title is required'}), 400
+
+        if format_type not in ['pdf', 'text', 'txt', 'markdown', 'md']:
+            return jsonify({'success': False, 'error': f'Invalid format: {format_type}'}), 400
+
+        try:
+            if format_type == 'pdf':
+                filename, filepath = file_gen.generate_pdf_from_wikipedia(title, content_text, url)
+            elif format_type in ['markdown', 'md']:
+                filename, filepath = file_gen.generate_markdown_from_wikipedia(title, content_text, url)
+            else:
+                filename, filepath = file_gen.generate_text_from_wikipedia(title, content_text, url)
+
+            return send_file(
+                filepath,
+                as_attachment=True,
+                download_name=filename
+            )
+        except Exception as e:
+            return jsonify({'success': False, 'error': f'Error generating file: {str(e)}'}), 500
+
     @app.route('/api/keys/generate', methods=['POST'])
     def api_generate_key():
         """Generate a new API key (development only)"""

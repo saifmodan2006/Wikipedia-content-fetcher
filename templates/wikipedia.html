@@ -648,20 +648,20 @@
                     </div>
 
                     <div class="detail-content">
-                        <h3>Summary</h3>
+                        <h3>📝 Summary</h3>
                         <p>${data.summary}</p>
 
-                        <h3>Content</h3>
-                        <p>${data.content.replace(/\n\n/g, '</p><p>')}</p>
+                        <h3>📚 Content</h3>
+                        <div class="content-text">${data.content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</div>
                     </div>
             `;
 
             if (data.categories && data.categories.length > 0) {
                 html += `
                     <div class="categories">
-                        <h4>📂 Categories</h4>
+                        <h4>📂 Categories (${data.categories.length})</h4>
                         <div class="category-tags">
-                            ${data.categories.slice(0, 10).map(cat => `<span class="category-tag">${cat}</span>`).join('')}
+                            ${data.categories.slice(0, 15).map(cat => `<span class="category-tag">${cat}</span>`).join('')}
                         </div>
                     </div>
                 `;
@@ -670,9 +670,9 @@
             if (data.references && data.references.length > 0) {
                 html += `
                     <div class="references">
-                        <h4>🔗 Related Links</h4>
+                        <h4>🔗 Related Links (${data.references.length})</h4>
                         <ul class="reference-list">
-                            ${data.references.slice(0, 10).map(ref => `<li>${ref}</li>`).join('')}
+                            ${data.references.slice(0, 15).map((ref, idx) => `<li><strong>${idx + 1}.</strong> ${ref}</li>`).join('')}
                         </ul>
                     </div>
                 `;
@@ -680,9 +680,9 @@
 
             html += `
                     <div class="download-options">
-                        <button class="btn btn-success" onclick="downloadContent('${data.title}', 'pdf')">📄 PDF</button>
-                        <button class="btn btn-success" onclick="downloadContent('${data.title}', 'markdown')">📝 Markdown</button>
-                        <button class="btn btn-success" onclick="downloadContent('${data.title}', 'text')">📋 Text</button>
+                        <button class="btn btn-success" onclick="downloadContent('${data.title.replace(/'/g, "\\'")}', 'pdf', '${data.url}', '${data.content.replace(/'/g, "\\'").replace(/"/g, '\\"').substring(0, 2000)}')">📄 PDF</button>
+                        <button class="btn btn-success" onclick="downloadContent('${data.title.replace(/'/g, "\\'")}', 'markdown', '${data.url}', '${data.content.replace(/'/g, "\\'").replace(/"/g, '\\"').substring(0, 2000)}')">📝 Markdown</button>
+                        <button class="btn btn-success" onclick="downloadContent('${data.title.replace(/'/g, "\\'")}', 'text', '${data.url}', '${data.content.replace(/'/g, "\\'").replace(/"/g, '\\"').substring(0, 2000)}')">📋 Text</button>
                     </div>
                 </div>
             `;
@@ -690,19 +690,54 @@
             document.getElementById('results').innerHTML = html;
         }
 
-        function downloadContent(title, format) {
+        function downloadContent(title, format, url, content) {
             if (!currentAPIKey) {
-                alert('API key not available');
+                alert('❌ API key not available');
                 return;
             }
 
-            // Store content for download
-            const downloadLink = document.createElement('a');
-            downloadLink.href = `/api/wikipedia/download?api_key=${currentAPIKey}&title=${encodeURIComponent(title)}&format=${format}`;
-            downloadLink.download = `${title}.${format === 'markdown' ? 'md' : format}`;
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            document.body.removeChild(downloadLink);
+            try {
+                showDownloadLoading(format);
+
+                // Create download URL with proper parameters
+                const params = new URLSearchParams({
+                    'api_key': currentAPIKey,
+                    'title': title,
+                    'format': format,
+                    'url': url,
+                    'content': content.substring(0, 3000)
+                });
+
+                const downloadLink = document.createElement('a');
+                downloadLink.href = `/api/wikipedia/download?${params.toString()}`;
+                downloadLink.download = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.${format === 'markdown' ? 'md' : format}`;
+                document.body.appendChild(downloadLink);
+
+                setTimeout(() => {
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                    showDownloadSuccess(format);
+                }, 100);
+            } catch (error) {
+                console.error('Download error:', error);
+                alert('❌ Error downloading content: ' + error.message);
+            }
+        }
+
+        function showDownloadLoading(format) {
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '⏳ Generating...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }, 3000);
+        }
+
+        function showDownloadSuccess(format) {
+            alert('✅ Download started! Check your downloads folder.\nFormat: ' + format.toUpperCase());
         }
     </script>
 </body>
