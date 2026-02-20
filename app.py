@@ -401,42 +401,87 @@ def create_app(config_name='development'):
                 'error': f'Error generating file: {str(e)}'
             }), 500
 
-    @app.route('/api/wikipedia/download', methods=['GET'])
+    @app.route('/api/wikipedia/download', methods=['GET', 'POST'])
     def api_wikipedia_download_by_title():
-        """Download Wikipedia content by title"""
-        api_key = request.args.get('api_key') or request.headers.get('X-API-Key')
-        title = request.args.get('title', '').strip()
-        format_type = request.args.get('format', 'pdf').lower()
-        content_text = request.args.get('content', '')
-        url = request.args.get('url', '')
+        """Download Wikipedia content by title - support both GET and POST"""
+        api_key = None
+        title = None
+        format_type = 'pdf'
+        content_text = ''
+        url = ''
 
+        if request.method == 'POST':
+            # POST method for larger content
+            data = request.get_json() or {}
+            api_key = data.get('api_key') or request.headers.get('X-API-Key')
+            title = data.get('title', '').strip()
+            format_type = data.get('format', 'pdf').lower()
+            content_text = data.get('content', '')
+            url = data.get('url', '')
+        else:
+            # GET method for smaller requests
+            api_key = request.args.get('api_key') or request.headers.get('X-API-Key')
+            title = request.args.get('title', '').strip()
+            format_type = request.args.get('format', 'pdf').lower()
+            content_text = request.args.get('content', '')
+            url = request.args.get('url', '')
+
+        # Validate API key
         if not api_key:
-            return jsonify({'success': False, 'error': 'API key required'}), 401
+            return jsonify({'success': False, 'error': '❌ API key required'}), 401
 
         if not WikipediaManager.validate_api_key(api_key):
-            return jsonify({'success': False, 'error': 'Invalid API key'}), 401
+            return jsonify({'success': False, 'error': '❌ Invalid API key'}), 401
 
+        # Validate title
         if not title:
-            return jsonify({'success': False, 'error': 'Title is required'}), 400
+            return jsonify({'success': False, 'error': '❌ Title is required'}), 400
 
+        # Validate format
         if format_type not in ['pdf', 'text', 'txt', 'markdown', 'md']:
-            return jsonify({'success': False, 'error': f'Invalid format: {format_type}'}), 400
+            return jsonify({'success': False, 'error': f'❌ Invalid format: {format_type}'}), 400
+
+        # Validate content
+        if not content_text or len(content_text.strip()) < 10:
+            return jsonify({'success': False, 'error': '❌ Content is empty or too short'}), 400
 
         try:
+            # Generate file based on format
             if format_type == 'pdf':
                 filename, filepath = file_gen.generate_pdf_from_wikipedia(title, content_text, url)
             elif format_type in ['markdown', 'md']:
                 filename, filepath = file_gen.generate_markdown_from_wikipedia(title, content_text, url)
-            else:
+            else:  # text or txt
                 filename, filepath = file_gen.generate_text_from_wikipedia(title, content_text, url)
 
+            # Check if file was created successfully
+            if not os.path.exists(filepath):
+                return jsonify({'success': False, 'error': '❌ Failed to create download file'}), 500
+
+            # Log download
+            try:
+                from database import Download
+                download_record = Download(
+                    content_id=0,  # 0 for Wikipedia content
+                    format=format_type,
+                    file_name=filename
+                )
+                db.session.add(download_record)
+                db.session.commit()
+            except:
+                pass  # Logging failure shouldn't block download
+
+            # Send file
             return send_file(
                 filepath,
                 as_attachment=True,
-                download_name=filename
+                download_name=filename,
+                mimetype='application/octet-stream'
             )
+
         except Exception as e:
-            return jsonify({'success': False, 'error': f'Error generating file: {str(e)}'}), 500
+            print(f"Download error: {str(e)}")
+            return jsonify({'success': False, 'error': f'❌ Error: {str(e)}'}), 500
 
     @app.route('/api/keys/generate', methods=['POST'])
     def api_generate_key():

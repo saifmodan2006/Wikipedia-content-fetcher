@@ -678,11 +678,15 @@
                 `;
             }
 
+            // Store full content for downloads (will be used by downloadContent function)
+            const fullContent = data.content;
+            const fullUrl = data.url;
+
             html += `
                     <div class="download-options">
-                        <button class="btn btn-success" onclick="downloadContent('${data.title.replace(/'/g, "\\'")}', 'pdf', '${data.url}', '${data.content.replace(/'/g, "\\'").replace(/"/g, '\\"').substring(0, 2000)}')">📄 PDF</button>
-                        <button class="btn btn-success" onclick="downloadContent('${data.title.replace(/'/g, "\\'")}', 'markdown', '${data.url}', '${data.content.replace(/'/g, "\\'").replace(/"/g, '\\"').substring(0, 2000)}')">📝 Markdown</button>
-                        <button class="btn btn-success" onclick="downloadContent('${data.title.replace(/'/g, "\\'")}', 'text', '${data.url}', '${data.content.replace(/'/g, "\\'").replace(/"/g, '\\"').substring(0, 2000)}')">📋 Text</button>
+                        <button class="btn btn-success" onclick="downloadContent('${data.title.replace(/'/g, "\\'")}', 'pdf', '${fullUrl.replace(/'/g, "\\'")}', '${fullContent.replace(/'/g, "\\'").replace(/"/g, '\\"')}')">📄 PDF</button>
+                        <button class="btn btn-success" onclick="downloadContent('${data.title.replace(/'/g, "\\'")}', 'markdown', '${fullUrl.replace(/'/g, "\\'")}', '${fullContent.replace(/'/g, "\\'").replace(/"/g, '\\"')}')">📝 Markdown</button>
+                        <button class="btn btn-success" onclick="downloadContent('${data.title.replace(/'/g, "\\'")}', 'text', '${fullUrl.replace(/'/g, "\\'")}', '${fullContent.replace(/'/g, "\\'").replace(/"/g, '\\"')}')">📋 Text</button>
                     </div>
                 </div>
             `;
@@ -699,28 +703,63 @@
             try {
                 showDownloadLoading(format);
 
-                // Create download URL with proper parameters
-                const params = new URLSearchParams({
-                    'api_key': currentAPIKey,
-                    'title': title,
-                    'format': format,
-                    'url': url,
-                    'content': content.substring(0, 3000)
-                });
+                // Prepare download data
+                const downloadData = {
+                    api_key: currentAPIKey,
+                    title: title,
+                    format: format,
+                    url: url,
+                    content: content  // Send full content via POST
+                };
 
-                const downloadLink = document.createElement('a');
-                downloadLink.href = `/api/wikipedia/download?${params.toString()}`;
-                downloadLink.download = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.${format === 'markdown' ? 'md' : format}`;
-                document.body.appendChild(downloadLink);
+                // Use fetch API with POST to send data
+                fetch('/api/wikipedia/download', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': currentAPIKey
+                    },
+                    body: JSON.stringify(downloadData)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => {
+                            throw new Error(err.error || 'Download failed');
+                        });
+                    }
+                    // Get filename from Content-Disposition header
+                    const contentDisposition = response.headers.get('content-disposition');
+                    let filename = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.${format === 'markdown' ? 'md' : format}`;
 
-                setTimeout(() => {
-                    downloadLink.click();
-                    document.body.removeChild(downloadLink);
+                    if (contentDisposition) {
+                        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                        if (filenameMatch) {
+                            filename = filenameMatch[1];
+                        }
+                    }
+
+                    return response.blob().then(blob => ({ blob, filename }));
+                })
+                .then(({ blob, filename }) => {
+                    // Create download link
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+
                     showDownloadSuccess(format);
-                }, 100);
+                })
+                .catch(error => {
+                    console.error('Download error:', error);
+                    showDownloadError(error.message || 'Download failed');
+                });
             } catch (error) {
-                console.error('Download error:', error);
-                alert('❌ Error downloading content: ' + error.message);
+                console.error('Download prepare error:', error);
+                showDownloadError(error.message || 'Error preparing download');
             }
         }
 
@@ -730,14 +769,31 @@
             btn.textContent = '⏳ Generating...';
             btn.disabled = true;
 
-            setTimeout(() => {
-                btn.textContent = originalText;
-                btn.disabled = false;
-            }, 3000);
+            // Note: Will be re-enabled after download completes
         }
 
         function showDownloadSuccess(format) {
-            alert('✅ Download started! Check your downloads folder.\nFormat: ' + format.toUpperCase());
+            const btn = event.target;
+            btn.textContent = '✅ Downloaded!';
+            setTimeout(() => {
+                btn.textContent = btn.getAttribute('data-original') || '📄 Download';
+                btn.disabled = false;
+            }, 2000);
+
+            // Optional: Show toaster notification
+            const msg = `✅ ${format.toUpperCase()} download complete! Check your downloads folder.`;
+            console.log(msg);
+        }
+
+        function showDownloadError(errorMsg) {
+            const btn = event.target;
+            btn.textContent = '❌ Error';
+            setTimeout(() => {
+                btn.textContent = btn.getAttribute('data-original') || '📄 Download';
+                btn.disabled = false;
+            }, 2000);
+
+            alert(`❌ Download Error:\n${errorMsg}`);
         }
     </script>
 </body>
